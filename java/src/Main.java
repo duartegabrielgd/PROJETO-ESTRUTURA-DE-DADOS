@@ -1,12 +1,19 @@
+import estruturas.Pilha;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Scanner;
-
 import modelos.Paciente;
 import modelos.Prioridade;
-import estruturas.Pilha;
 
 public class Main {
 
     static Scanner scanner = new Scanner(System.in);
+
+    // Arquivo onde os pacientes serão salvos
+    static final String ARQUIVO = "pacientes.txt";
 
     // Array que armazena os pacientes
     static Paciente[] pacientes = new Paciente[100];
@@ -18,6 +25,9 @@ public class Main {
     static Pilha<String> historico = new Pilha<>(100);
 
     public static void main(String[] args) {
+
+        // Carrega os pacientes salvos anteriormente
+        carregarPacientes();
 
         int opcao;
 
@@ -59,6 +69,7 @@ public class Main {
                     break;
 
                 case 0:
+                    salvarPacientes();
                     System.out.println("\nSistema encerrado.");
                     break;
 
@@ -134,6 +145,9 @@ public class Main {
 
         historico.empilhar("CADASTRO: " + nome);
 
+        // Salva automaticamente
+        salvarPacientes();
+
         System.out.println("\nPaciente cadastrado com sucesso!");
     }
 
@@ -196,6 +210,9 @@ public class Main {
                 }
             }
         }
+
+        // Salva a nova ordem
+        salvarPacientes();
 
         System.out.println("Pacientes ordenados por nome!");
     }
@@ -266,5 +283,117 @@ public class Main {
 
         System.out.println("\nÚltima operação:");
         System.out.println(operacao);
+    }
+
+    // ============================================================
+    // SALVAR PACIENTES
+    // ============================================================
+
+    public static void salvarPacientes() {
+
+        try {
+
+            BufferedWriter escritor = new BufferedWriter(
+                    new FileWriter(ARQUIVO)
+            );
+
+            for (int i = 0; i < quantidadePacientes; i++) {
+
+                Paciente paciente = pacientes[i];
+
+                escritor.write(
+                        paciente.getId()
+                        + ";"
+                        + paciente.getNome()
+                        + ";"
+                        + paciente.getIdade()
+                        + ";"
+                        + paciente.getPrioridade()
+                );
+
+                escritor.newLine();
+            }
+
+            escritor.close();
+
+        } catch (IOException e) {
+
+            System.out.println(
+                    "\nErro ao salvar pacientes: "
+                    + e.getMessage()
+            );
+        }
+    }
+
+    // ============================================================
+    // CARREGAR PACIENTES
+    // ============================================================
+
+    public static void carregarPacientes() {
+
+        try {
+
+            BufferedReader leitor = new BufferedReader(
+                    new FileReader(ARQUIVO)
+            );
+
+            String linha;
+
+            while ((linha = leitor.readLine()) != null) {
+
+                if (quantidadePacientes >= pacientes.length) {
+                    break;
+                }
+
+                String[] dados = linha.split(";");
+
+                if (dados.length == 4) {
+
+                    int id = Integer.parseInt(dados[0]);
+                    String nome = dados[1];
+                    int idade = Integer.parseInt(dados[2]);
+
+                    Prioridade prioridade =
+                            Prioridade.valueOf(dados[3]);
+
+                    pacientes[quantidadePacientes] =
+                            new Paciente(
+                                    id,
+                                    nome,
+                                    idade,
+                                    prioridade
+                            );
+
+                    quantidadePacientes++;
+                }
+            }
+
+            leitor.close();
+
+            if (quantidadePacientes > 0) {
+                System.out.println(
+                        quantidadePacientes
+                        + " paciente(s) carregado(s)."
+                );
+            }
+
+        } catch (IOException e) {
+
+            // Se o arquivo ainda não existir,
+            // simplesmente começa sem pacientes.
+            if (!e.getMessage().contains("não encontrado")) {
+                System.out.println(
+                        "\nAviso ao carregar pacientes: "
+                        + e.getMessage()
+                );
+            }
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "\nErro ao carregar pacientes: "
+                    + e.getMessage()
+            );
+        }
     }
 }
